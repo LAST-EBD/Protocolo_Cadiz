@@ -40,8 +40,7 @@ class Mosaic_Landsat(object):
         self.mos = os.path.join(self.raiz, 'mos')
         self.cloud_mask = 'None'
                     
-        for i in self.args:
-            print('Escena:', i)
+        print('Ruta escena:', self.ruta_escena, '\nRAD:', self.rad, '\nMOS:', self.mos)
                    
           
     def fmask(self):
@@ -102,10 +101,8 @@ class Mosaic_Landsat(object):
         #Read the data and write the dicts
         for i in self.args:
             
-            print('IIIIIII!!!!!!!!:', i)
-            
             escena = os.path.split(i)[1][:10]
-            print('ESCENA:', escena)
+            #print(escena)
             for banda in os.listdir(i):
                 if (banda.endswith('.TIF') or banda.endswith('.tif')) and not 'BQA' in banda:
                     b = banda.split('_')[-1].split('.')[0]
@@ -139,11 +136,35 @@ class Mosaic_Landsat(object):
                 print(output)
 
                 os.system('gdal_merge.py -n 0 {} -o {}'.format(str1, output))
-            
+                
+                
+                
+    def projwin(self):
+        
+        '''En este metodo vamos a darle el extent a la escena. Asi ya podemos usar el mismo DTM para 
+        cada escena y posteriormente sobre esta escena se calcularan las rad'''
+        
+        path_rad = os.path.join(self.rad, self.escena)
+        os.makedirs(path_rad, exist_ok=True)
+        
+  
+        for i in os.listdir(self.mos):
+            if (re.search('B[1-7]', i) and not 'B6' in i) or re.search('Fmask4', i):
+
+                ins = os.path.join(self.mos, i)
+                out = os.path.join(path_rad, i)
+
+                cmd = "gdal_translate -projwin  580485.0 4261215.0 856815.0 3885285.0 {} {}".format(ins, out)
+                print(cmd)
+                
+                os.system(cmd)
+    
+    
             
     def run(self):
         
         self.fmask()
         self.mosaic()
+        self.projwin()
     
   
