@@ -1,8 +1,7 @@
 
-
 import os, re, time, tarfile, shutil
-from Protocolo_HP import Mosaic_Landsat
-#from l7gapfill import gapfill No hay gapfill para la escena de Cadiz!
+#from Protocolo_HP import Mosaic_Landsat
+#from l7gapfill import gapfill
 
 usgs_OLD_id = None
 usgs_NEW_id = None
@@ -19,87 +18,89 @@ def rename(ruta):
     
     for sc in os.listdir(ruta):
         
-        if os.path.isdir(os.path.join(ruta, sc)):
-            ruta_escena = os.path.join(ruta, sc)
-        #Buscamos el MTL para obtener el nombre antiguo
-        for i in os.listdir(ruta_escena):
-            if i.endswith('MTL.txt'):
-                mtl = os.path.join(ruta_escena,i)
-                arc = open(mtl,'r')
-                for i in arc:
-                    if 'LANDSAT_SCENE_ID' in i:
-                        global usgs_OLD_id 
-                        usgs_OLD_id = i[-23:-2] #este es el antiguo nombre de Landsat
-                    elif 'LANDSAT_PRODUCT_ID' in i:
-                        global usgs_NEW_id 
-                        usgs_NEW_id= i.split('=')[-1][2:-2]
-                    
-                     
-                #A VER SI SE PUEDE INCLUIR EL RENAME DE LAS BANDAS Y DEL MTL AQUI DENTRO
-                arc.seek(0)
-                lineas = arc.readlines()
-                
-                for n, e in enumerate(lineas):
-
-                    if usgs_NEW_id in e and not "LANDSAT_PRODUCT_ID" in e:
-                        lineas[n] = lineas[n].replace(usgs_NEW_id, usgs_OLD_id)
-                
-                for n, e in enumerate(lineas):
-                    
-                    if 'FILE_NAME_BAND_QUALITY' in e:
-                        ix = n
-
-                    else: continue
-                    
-                arc.close()
-
-                #print('Escena:', sc, 'Indice Quality band:', ix)
-                
-                if not 'LC08' in sc:
-                    print('Eliminando BQA de', sc)
-                    lineas.pop(ix)
-                else:
-                    print('Escena', sc)
-                    
-                f = open(mtl, 'w')
-                for linea in lineas:
-                    f.write(linea)
-
-                f.close()                
-                #YA ESTARIAN CAMBIADOS LOS NOMBRES EN EL MTL, AHORA HAY QUE CAMBIAR LOS NOMBRES DE LAS BANDAS
-            
-                print('OLD_id:', usgs_OLD_id, 'desde Rename')
+        if sc.startswith('L'):
+        
+            if os.path.isdir(os.path.join(ruta, sc)):
+                ruta_escena = os.path.join(ruta, sc)
+            #Buscamos el MTL para obtener el nombre antiguo
+            for i in os.listdir(ruta_escena):
+                if i.endswith('MTL.txt'):
+                    mtl = os.path.join(ruta_escena,i)
+                    arc = open(mtl,'r')
+                    for i in arc:
+                        if 'LANDSAT_SCENE_ID' in i:
+                            global usgs_OLD_id 
+                            usgs_OLD_id = i[-23:-2] #este es el antiguo nombre de Landsat
+                        elif 'LANDSAT_PRODUCT_ID' in i:
+                            global usgs_NEW_id 
+                            usgs_NEW_id= i.split('=')[-1][2:-2]
 
 
-                fecha=time.strftime("%d-%m-%Y")
-                raiz = os.path.split(ruta_escena)[0]
-                escena = usgs_OLD_id
-                #nescena = path
-                #print('LA ESCENA A RENOMBRAR ES', ruta_escena)
-                sat = escena[:3]
-                path =  escena[3:6]
-                row = escena[7:9]
-                fecha = time.strptime(escena[9:13] + " " + escena[13:16], '%Y %j')
-                year = str(fecha.tm_year)
-                month = str(fecha.tm_mon)
-                if len(month) == 1:
-                    month = '0' + month
-                day = str(fecha.tm_mday)
-                if len(day) == 1:
-                    day = '0' + day
+                    #A VER SI SE PUEDE INCLUIR EL RENAME DE LAS BANDAS Y DEL MTL AQUI DENTRO
+                    arc.seek(0)
+                    lineas = arc.readlines()
 
-                outname = os.path.join(raiz, year +  month  + day + sats[sat] + path + "_" + row) #raiz, year +  month  + day
-                print(outname)
+                    for n, e in enumerate(lineas):
 
-                try:
+                        if usgs_NEW_id in e and not "LANDSAT_PRODUCT_ID" in e:
+                            lineas[n] = lineas[n].replace(usgs_NEW_id, usgs_OLD_id)
 
-                    #os.mkdir(outname)
-                    #return outname
-                    os.rename(ruta_escena, outname)
-                    print('Escena', ruta_escena, 'renombrada a', outname)
+                    for n, e in enumerate(lineas):
 
-                except Exception as e:
-                    print(e, ruta_escena)
+                        if 'FILE_NAME_BAND_QUALITY' in e:
+                            ix = n
+
+                        else: continue
+
+                    arc.close()
+
+                    #print('Escena:', sc, 'Indice Quality band:', ix)
+
+                    if not 'LC08' in sc:
+                        print('Eliminando BQA de', sc)
+                        lineas.pop(ix)
+                    else:
+                        print('Escena', sc)
+
+                    f = open(mtl, 'w')
+                    for linea in lineas:
+                        f.write(linea)
+
+                    f.close()                
+                    #YA ESTARIAN CAMBIADOS LOS NOMBRES EN EL MTL, AHORA HAY QUE CAMBIAR LOS NOMBRES DE LAS BANDAS
+
+                    print('OLD_id:', usgs_OLD_id, 'desde Rename')
+
+
+                    fecha=time.strftime("%d-%m-%Y")
+                    raiz = os.path.split(ruta_escena)[0]
+                    escena = usgs_OLD_id
+                    #nescena = path
+                    #print('LA ESCENA A RENOMBRAR ES', ruta_escena)
+                    sat = escena[:3]
+                    path =  escena[3:6]
+                    row = escena[7:9]
+                    fecha = time.strptime(escena[9:13] + " " + escena[13:16], '%Y %j')
+                    year = str(fecha.tm_year)
+                    month = str(fecha.tm_mon)
+                    if len(month) == 1:
+                        month = '0' + month
+                    day = str(fecha.tm_mday)
+                    if len(day) == 1:
+                        day = '0' + day
+
+                    outname = os.path.join(raiz, year +  month  + day + sats[sat] + path + "_" + row) #raiz, year +  month  + day
+                    print(outname)
+
+                    try:
+
+                        #os.mkdir(outname)
+                        #return outname
+                        os.rename(ruta_escena, outname)
+                        print('Escena', ruta_escena, 'renombrada a', outname)
+
+                    except Exception as e:
+                        print(e, ruta_escena)
                     
                 
         
@@ -161,10 +162,12 @@ def rename_bands(ruta):
     
     for sc in os.listdir(ruta):
         
+        #if sc.startswith('L'):
+        
         print('\nNEW IMAGE:', sc)
         if os.path.isdir(os.path.join(ruta, sc)):
             ruta_escena = os.path.join(ruta, sc)
-        
+
         for i in os.listdir(ruta_escena):
 
             #print(i)
@@ -183,25 +186,25 @@ def rename_bands(ruta):
 
                 arc.close()
                 print('DESDE RENAME BANDAS UGSGS IDS', usgs_NEW_id, usgs_OLD_id, '\n')
-                
-            #else: continue
-        
-        for ii in os.listdir(ruta_escena):
-            
-            #print('II:', ii)
-            #print(usgs_NEW_id, usgs_OLD_id, 'Desde Rename de Bandas')
 
-            nname = os.path.join(ruta_escena, ii.replace(usgs_NEW_id, usgs_OLD_id))
-            oname = os.path.join(ruta_escena, ii)
+        #else: continue
 
-            os.rename(oname, nname)
-            #print('II:', oname, '--->', nname, '\n')            
-        
-        
-        if os.path.exists(os.path.join(ruta_escena, 'gap_mask')):
-            ruta_gapmask = os.path.join(ruta_escena, 'gap_mask')
-            print('\nVAMOS A RENOMBRAR LAS GAPMASK', 'gap:', ruta_gapmask, 'oldID:', usgs_OLD_id, 'NewID:', usgs_NEW_id, '\n')
-            rename_gapmask(ruta_gapmask, usgs_OLD_id, usgs_NEW_id)
+    for ii in os.listdir(ruta_escena):
+
+        #print('II:', ii)
+        #print(usgs_NEW_id, usgs_OLD_id, 'Desde Rename de Bandas')
+
+        nname = os.path.join(ruta_escena, ii.replace(usgs_NEW_id, usgs_OLD_id))
+        oname = os.path.join(ruta_escena, ii)
+
+        os.rename(oname, nname)
+        #print('II:', oname, '--->', nname, '\n')            
+
+
+    if os.path.exists(os.path.join(ruta_escena, 'gap_mask')):
+        ruta_gapmask = os.path.join(ruta_escena, 'gap_mask')
+        print('\nVAMOS A RENOMBRAR LAS GAPMASK', 'gap:', ruta_gapmask, 'oldID:', usgs_OLD_id, 'NewID:', usgs_NEW_id, '\n')
+        rename_gapmask(ruta_gapmask, usgs_OLD_id, usgs_NEW_id)
             
         #del_bqa(ruta_escena)
             
@@ -262,7 +265,7 @@ if __name__ == "__main__":
             else:
                 ruta_escena = os.path.join(ruta, sc)
                 print('ESCENA A PROCESAR:', sc)
-                #MiEscena = NLandsat(ruta_escena)
+                #MiEscena = Mosaic_Landsat(ruta_escena)
                 #MiEscena.run()
         
 print('zACABO')

@@ -128,6 +128,16 @@ class Mosaic_Landsat(object):
                 print("Unexpected error:", type(e), e)
                 
                 
+    def del_mosaic(self):
+        
+        '''Este metodo borra las bandas que estuvieran previamente en mos'''
+        
+        for i in os.listdir(self.mos):
+            
+            sc = os.path.join(self.mos, i)
+            os.remove(sc)
+            
+   
                 
     def mosaic(self):
         
@@ -293,7 +303,7 @@ class Mosaic_Landsat(object):
                         #Abrimos la mascara para evitar problemas con los valores bajos en los bordes de Fmask
                         inner = os.path.join(self.data, 'intern_buffer_mos.tif')
                         Inner = gdal.Open(inner).ReadAsArray()
-                        data2 = data[((Inner == 1) & ((Fmask==1) | (((Fmask==0) & (data != 0)) & (Hillshade<(np.percentile(Hillshade, 20))))))]
+                        data2 = data[(data != 0) & ((Inner == 1) & ((Fmask==1) | (((Fmask==0) & (data != 0)) & (Hillshade<(np.percentile(Hillshade, 20))))))]
 
                         #mask = np.copy(data)
                         #mask[mask != 0] == 1
@@ -305,7 +315,7 @@ class Mosaic_Landsat(object):
                     
                         #Aqui iria una alternativa a Fmask si fallara
 
-                        print('data 2 obtenido')
+                        print('data 2 * obtenido')
 
                         lista = sorted(data2.tolist())
                         print(sorted(lista)[:10])
@@ -728,14 +738,16 @@ class Mosaic_Landsat(object):
             profile.update(dtype=rasterio.uint16)
 
             with rasterio.open(outFile, 'w', **profile) as dst:
+             
                 dst.write(rs.astype(rasterio.uint16))
     
     
             
     def run(self):
         
-        #self.fmask()
-        #self.mosaic()
+        self.fmask()
+        self.del_mosaic()
+        self.mosaic()
         self.projwin()
         self.get_kl_csw()
         self.get_radiance()
