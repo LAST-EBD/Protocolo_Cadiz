@@ -201,9 +201,9 @@ class Product(object):
         
         
         
-    def depth(self, flood, septb4):
+    def depth(self, flood, septb4, septwmask):
 
-            outfile = os.path.join(self.productos, self.escena + '_depth2.tif')
+            outfile = os.path.join(self.productos, self.escena + '_depth3.tif')
             print(outfile)
 
             with rasterio.open(flood) as flood:
@@ -214,6 +214,9 @@ class Product(object):
                 SEPTB4 = np.true_divide(SEPTB4, 10000)
                 SEPTB4 = SEPTB4 * 306
             
+            with rasterio.open(septwmask) as septwater:
+                SEPTWMASK = septwater.read()
+                
             #Banda 1
             with rasterio.open(self.blue) as blue:
                 BLUE = blue.read()
@@ -262,7 +265,8 @@ class Product(object):
                 (1.023724916 * RATIO_GREEN_NIR) - (1.041844944 * RATIO_NIR_SEPTNIR)
             DEPTH = np.power(math.e, depth) - 0.01
             
-            DEPTH_ = np.where((FLOOD == 1), DEPTH, 0)
+            #PASAR A NODATA EL AGUA DE SEPTIEMBRE!!!!
+            DEPTH_ = np.where((FLOOD == 1) & (SEPTWMASK == 0), DEPTH, 0)
 
 
             profile = swir1.meta
