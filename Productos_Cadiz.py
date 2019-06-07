@@ -203,7 +203,7 @@ class Product(object):
         
     def depth(self, flood, septb4, septwmask):
 
-            outfile = os.path.join(self.productos, self.escena + '_depth3.tif')
+            outfile = os.path.join(self.productos, self.escena + '_depth_.tif')
             print(outfile)
 
             with rasterio.open(flood) as flood:
@@ -212,6 +212,7 @@ class Product(object):
             with rasterio.open(septb4) as septb4:
                 SEPTB4 = septb4.read()
                 SEPTB4 = np.true_divide(SEPTB4, 10000)
+                SEPTB4 = np.where(SEPTB4 >= 0.830065359, 0.830065359, SEPTB4)
                 SEPTB4 = SEPTB4 * 306
             
             with rasterio.open(septwmask) as septwater:
@@ -221,6 +222,7 @@ class Product(object):
             with rasterio.open(self.blue) as blue:
                 BLUE = blue.read()
                 BLUE = np.true_divide(BLUE, 10000)
+                BLUE = np.where(BLUE >= 0.638190955, 0.638190955, BLUE)
                 BLUE = BLUE * 398
                 BLUE = np.where(BLUE >= 50, 50, BLUE)
                 
@@ -228,6 +230,7 @@ class Product(object):
             with rasterio.open(self.green) as green:
                 GREEN = green.read()
                 GREEN = np.true_divide(GREEN, 10000)
+                GREEN = np.where(GREEN >= 0.638190955, 0.638190955, GREEN)
                 GREEN = GREEN * 398
                 #GREEN = np.where(GREEN == 0, 1, GREEN)
                 #GREEN = np.true_divide(GREEN, 10000)
@@ -238,6 +241,7 @@ class Product(object):
             with rasterio.open(self.nir) as nir:
                 NIR = nir.read()
                 NIR = np.true_divide(NIR, 10000)
+                NIR = np.where(NIR >= 0.830065359, 0.830065359, NIR)
                 NIR = NIR * 306
                 #NIR = np.where(NIR == 0, 1, NIR)
                 #NIR = np.true_divide(NIR, 10000)
@@ -247,6 +251,7 @@ class Product(object):
             with rasterio.open(self.swir1) as swir1:
                 SWIR1 = swir1.read()
                 SWIR1 = np.true_divide(SWIR1, 10000)
+                SWIR1 = np.where(SWIR1 >= 0.601895735, 0.601895735, SWIR1)
                 SWIR1 = SWIR1 * 422
                 #SWIR1 = np.where(SWIR1 == 0, 1, SWIR1)
                 #SWIR1 = np.true_divide(SWIR1, 10000)
@@ -261,9 +266,14 @@ class Product(object):
             
 
             #Profundidad para la marisma        
-            depth = 5.293739862 - (0.038684824 * BLUE) - (0.007525455 * SEPTB4) + (0.02826867 * SWIR1) + \
-                (1.023724916 * RATIO_GREEN_NIR) - (1.041844944 * RATIO_NIR_SEPTNIR)
-            DEPTH = np.power(math.e, depth) - 0.01
+            #depth = 5.293739862 - (0.038684824 * BLUE) - (0.007525455 * SEPTB4) + (0.02826867 * SWIR1) + \
+                #(1.023724916 * RATIO_GREEN_NIR) - (1.041844944 * RATIO_NIR_SEPTNIR)
+                
+            a = ((-0.038684824 * BLUE) + 5.293739862) + (0.02826867 * SWIR1) + (-0.007525455 * SEPTB4) + \
+                (1.023724916 * RATIO_GREEN_NIR) + (-1.041844944 * RATIO_NIR_SEPTNIR)
+            
+                
+            DEPTH = np.exp(a) - 0.01
             
             #PASAR A NODATA EL AGUA DE SEPTIEMBRE!!!!
             DEPTH_ = np.where((FLOOD == 1) & (SEPTWMASK == 0), DEPTH, 0)
